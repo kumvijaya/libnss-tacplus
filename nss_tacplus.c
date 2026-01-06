@@ -1014,6 +1014,8 @@ fixup_gr_mem(const char *grnam, const char **gr_in, char *buf,
      * space in gr_mem, but it's not too expensive, no connects
      * to a tacacs server.
     */
+    /* First pass: count pointers AND total bytes required for strings */
+    long long total_chars = 0;
     for (in=gr_in; in && *in; in++) {
         char *mapnames = lookup_all_mapped(*in);
         if (mapnames) { /*  comma separated list was returned  */
@@ -1021,13 +1023,28 @@ fixup_gr_mem(const char *grnam, const char **gr_in, char *buf,
             tok = strtok_r(mapnames, ",", &saved);
             while (tok) {
                 nadded++;
+                total_chars += (long long)strlen(tok) + 1;
                 tok = strtok_r(NULL, ",", &saved);
             }
         }
-        else
+        else {
             nadded++;
+            total_chars += (long long)strlen(*in) + 1;
+        }
     }
-    l = sizeof *gr_mem * (nadded+1);
+
+    /* required = pointer array + all strings (alignment already applied) */
+    l = (long long)sizeof *gr_mem * (nadded + 1) + total_chars;
+    if (l > len) {
+        /* fail fast so caller/GLIBC can TRYAGAIN without partial copies */
+        *err = ERANGE;
+        *lenp = 0;
+        if (debug)
+            syslog(LOG_DEBUG, "%s: group %s needs %llu bytes, only %llu available. Flagging for reallocation",
+                nssname, grnam, l, len);
+        return NULL;
+    }
+    l = (long long)sizeof *gr_mem * (nadded+1);
     len -= l;
     mem += l;
 
