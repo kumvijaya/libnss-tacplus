@@ -1026,6 +1026,8 @@ fixup_gr_mem(const char *grnam, const char **gr_in, char *buf,
                 total_chars += (long long)strlen(tok) + 1;
                 tok = strtok_r(NULL, ",", &saved);
             }
+            free(mapnames);
+            mapnames = NULL;
         }
         else {
             nadded++;
@@ -1056,11 +1058,16 @@ fixup_gr_mem(const char *grnam, const char **gr_in, char *buf,
             tok = strtok_r(mapnames, ",", &saved);
             while (tok) {
                 gr_mem[midx] = mem;
-                if(copyuser(&mem, tok, &len, err))
+                if(copyuser(&mem, tok, &len, err)) {
+                    free(mapnames);
+                    mapnames = NULL;
                     goto done;
+		}
                 midx++;
                 tok = strtok_r(NULL, ",", &saved);
             }
+	    free(mapnames);
+	    mapnames = NULL;
         }
         else { /*  just copy what was returned to the buffer */
             gr_mem[midx] = mem;
