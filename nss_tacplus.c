@@ -1042,7 +1042,8 @@ fixup_gr_mem(const char *grnam, const char **gr_in, char *buf,
         *err = ERANGE;
         *lenp = 0;
         if (debug)
-            syslog(LOG_DEBUG, "%s: group %s needs %llu bytes, only %llu available. Flagging for reallocation",
+            syslog(LOG_DEBUG, "%s: group %s needs %llu bytes, only %llu "
+                "available. Flagging for reallocation",
                 nssname, grnam, l, len);
         return NULL;
     }
@@ -1057,19 +1058,39 @@ fixup_gr_mem(const char *grnam, const char **gr_in, char *buf,
             char *saved, *tok;
             tok = strtok_r(mapnames, ",", &saved);
             while (tok) {
+                /* T8083:Fix to handle the scenario where no. of members in the
+                *  group increase between the execution of the two passes, i.e
+                *  lookup_all_mapped() returns different strings in first
+                *  and second pass */
+                if (midx >= nadded) {
+                    syslog(LOG_WARNING, "%s: group %s No of members fetched "
+                        "exceeded in second pass. First pass count was %d."
+                        "Flagging for reallocation!", nssname, grnam, nadded);
+                    free(mapnames);
+                    *err = ERANGE;
+                    return NULL;
+                }
                 gr_mem[midx] = mem;
                 if(copyuser(&mem, tok, &len, err)) {
                     free(mapnames);
                     mapnames = NULL;
                     goto done;
-		}
+                }
                 midx++;
                 tok = strtok_r(NULL, ",", &saved);
             }
-	    free(mapnames);
-	    mapnames = NULL;
+            free(mapnames);
+            mapnames = NULL;
         }
         else { /*  just copy what was returned to the buffer */
+            if (midx >= nadded) {
+                syslog(LOG_WARNING, "%s: group %s No of members fetched "
+                    "exceeded in second pass. First pass count was %d, midx=%d *in=%s."
+                    "Flagging for reallocation!", nssname, grnam, nadded, midx, *in);
+                    *err = ERANGE;
+                    return NULL;
+            }
+
             gr_mem[midx] = mem;
             if(copyuser(&mem, *in, &len, err))
                 goto done;
@@ -1081,8 +1102,9 @@ fixup_gr_mem(const char *grnam, const char **gr_in, char *buf,
     gr_mem[midx] = NULL;        /*  terminate the list */
 
     if (*err) {
-        syslog(LOG_WARNING, "%s: group %s members truncated due to short"
-               " buffer %lld characters", nssname, grnam, (long long)*lenp);
+        syslog(LOG_WARNING, "%s: group %s buffer len %lld. Unexpected change in "
+               "no. of group members b/w passes or some error. Flagging for "
+               "error/reallocation!", nssname, grnam, (long long)*lenp);
         *lenp = 0;
     } else {
         out = gr_mem;
