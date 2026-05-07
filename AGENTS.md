@@ -13,7 +13,7 @@ NSS plugin (`libnss_tacplus.so`) that resolves `getpwnam` lookups for TACACS+-au
 ## Build / test / run
 
 ```sh
-./auto.sh                 # autoreconf (generates ./configure)
+./auto.sh                 # autoreconf (generates./configure)
 ./configure
 make
 sudo make install         # installs libnss_tacplus.so + tacplus_nss.conf
