@@ -30,17 +30,13 @@ No in-tree test suite — exercised end-to-end on a VyOS image via `pam_tacplus`
 
 ## Cross-repo context
 
-Pre-dep of the `vyos-1x` runtime auth stack. Built via `VyOS-Networks/vyos-build-packages` and shipped in the ISO from `vyos/vyos-build`. Calls into `libtacplus-map` (mapping helper) and the `libtac` library produced by `libpam-tacplus`. Companion repos: `libpam-tacplus`, `libtacplus-map`, `libnss-mapuser`, `libpam-radius-auth`.
+Pre-dep of the `vyos-1x` runtime auth stack. Built via the internal build-packages workflow and shipped in the ISO from `vyos/vyos-build`. Calls into `libtacplus-map` (mapping helper) and the `libtac` library produced by `libpam-tacplus`. Companion repos: `libpam-tacplus`, `libtacplus-map`, `libnss-mapuser`, `libpam-radius-auth`.
 
 ## Conventions
 
 - Default branch `master` (forked from `daveolson53/libnss-tacplus`).
 - Commit / PR title format: `component: T12345: description` (Phorge task ID at https://vyos.dev) — enforced if PR-message workflow is added later. No workflow files currently in `.github/workflows/`.
 - Treat as upstream-vendored: keep diffs against fork minimal; new functionality belongs in `libtacplus-map` or `libpam-tacplus`.
-
-## Mirror relationship
-
-Mirror twin: `VyOS-Networks/libnss-tacplus`. Canonical side is here. The mirror pipeline (`vyos/.github/.github/workflows/pr-mirror-repo-sync.yml`) is **not** wired up for this repo today (no workflows in `.github/workflows/`).
 
 ## Notes for future contributors
 
